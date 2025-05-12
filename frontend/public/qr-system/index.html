@@ -53,16 +53,18 @@
       <h3>How it works</h3>
       <ol>
         <li>Connect to a Bluetooth thermal printer</li>
-        <li>Generate a unique QR code for an attendee</li>
-        <li>Print the QR code to give to the attendee</li>
-        <li>Attendees scan the QR code to register their information</li>
+        <li>Generate a unique QR code from the server</li>
+        <li>Print the QR code and give it to an attendee</li>
+        <li>When first scanned, the attendee will be directed to a registration form</li>
+        <li>After the attendee registers their URL, future scans will redirect directly to their URL</li>
       </ol>
+      <p class="note">Each QR code can only be registered once. If an attendee needs a new code, generate a new one here.</p>
     </div>
   </main>
 
   <footer>
     <div class="container">
-      <p>Conference Registration System v0.1</p>
+      <p>Conference Registration System v1.0</p>
     </div>
   </footer>
 

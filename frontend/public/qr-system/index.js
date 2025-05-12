@@ -196,13 +196,23 @@ document.addEventListener("DOMContentLoaded", () => {
       generateQrBtn.disabled = true;
       generateQrBtn.textContent = "Generating...";
 
-      // For testing purposes, create a mock QR code
-      const mockCode = "TEST" + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-      const data = { code: mockCode };
+      // Use the backend API to generate a QR code
+      const response = await fetch('/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to generate QR code: ${response.status}`);
+      }
+      
+      const data = await response.json();
       
       // Store the QR code data
       currentQrCode = data.code;
-      currentQrUrl = `${window.location.origin}/qr-system/registration.html?code=${data.code}`;
+      currentQrUrl = data.url;
 
       // Generate QR code
       if (!generateQrCodeImage(currentQrUrl)) {

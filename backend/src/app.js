@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const app = express();
 app.use(express.json());
 
@@ -9,6 +10,9 @@ const handler = serverless(app);
 app.use(
   cors(),
 );
+
+// Serve static files from the frontend directory
+app.use(express.static(path.join(__dirname, '../../frontend/public')));
 
 app.post('/plus', async (httpReq, httpResp) => {
   const resp = await require('./plus').handler(httpReq);
