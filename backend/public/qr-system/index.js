@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const qrCodeDisplay = document.getElementById("qr-code-display")
   const qrCodeValue = document.getElementById("qr-code-value")
   const qrUrlValue = document.getElementById("qr-url-value")
+  const printQuantitySlider = document.getElementById("print-quantity")
+  const quantityValueDisplay = document.getElementById("quantity-value")
 
   // State
   let bluetoothDevice = null
@@ -15,6 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentQrCode = null
   let currentQrUrl = null
   let bitmapData = null
+  let printQuantity = 1 // Default to 1 copy
+
+  // Update quantity display when slider changes
+  printQuantitySlider.addEventListener("input", () => {
+    printQuantity = parseInt(printQuantitySlider.value)
+    quantityValueDisplay.textContent = printQuantity
+  })
 
   // === CONSTANTS ===
   const PRINTER_DPI = 203;
@@ -229,7 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Step 2: Print the QR code if printer is connected
       if (bluetoothCharacteristic) {
         try {
-          generatePrintQrBtn.textContent = "Printing...";
+          generatePrintQrBtn.textContent = `Printing ${printQuantity} ${printQuantity > 1 ? 'copies' : 'copy'}...`;
           
           // If bitmap data is not available, try to create it from the current QR code
           if (!bitmapData) {
@@ -251,78 +260,90 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error("Could not create bitmap data for printing");
           }
           
-          // Get bitmap dimensions
-          const width = PRINTER_BITMAP_WIDTH;
-          const height = PRINTER_BITMAP_HEIGHT;
-          const widthBytes = Math.ceil(width / 8);
-          
-          logDebug(`Printing bitmap: ${width}x${height} (${widthBytes} bytes per row)`);
-          
-          // 1. Initialize printer
-          logDebug("Sending initialization command...");
-          await sendData(new Uint8Array([0x1B, 0x40]));
-          
-          // 2. Text content - just send the text directly
-          logDebug("Sending header text...");
-          const encoder = new TextEncoder();
-          const textContent = encoder.encode(`\n\nConnect with me\non LinkedIn\nCode: ${currentQrCode}\nCreated by\nRealsense\n  Solutions\n\n`);
-          await sendData(textContent);
-          
-          // 3. Process the bitmap in chunks 
-          logDebug("Processing bitmap data...");
-          
-          // We need to split the data into chunks because of the 512-byte Bluetooth limit
-          // Calculate how many rows we can safely send in each chunk
-          const MAX_CHUNK_SIZE = 350; // Optimized value from diagnostic.html
-          const HEADER_SIZE = 7; // GS v 0 header is 7 bytes
-          const maxBytesPerChunk = MAX_CHUNK_SIZE - HEADER_SIZE;
-          const rowsPerChunk = Math.max(1, Math.floor(maxBytesPerChunk / widthBytes));
-          
-          logDebug(`Splitting into chunks with max ${rowsPerChunk} rows per chunk`);
-          
-          // Process the bitmap in chunks
-          for (let startRow = 0; startRow < height; startRow += rowsPerChunk) {
-            // Calculate the number of rows in this chunk
-            const rowsInThisChunk = Math.min(rowsPerChunk, height - startRow);
+          // Print the requested number of copies
+          for (let copyNum = 1; copyNum <= printQuantity; copyNum++) {
+            if (printQuantity > 1) {
+              generatePrintQrBtn.textContent = `Printing copy ${copyNum} of ${printQuantity}...`;
+            }
             
-            // Build GS v 0 command header for this chunk
-            const chunkWidth = widthBytes;
-            const chunkHeight = rowsInThisChunk;
+            // Get bitmap dimensions
+            const width = PRINTER_BITMAP_WIDTH;
+            const height = PRINTER_BITMAP_HEIGHT;
+            const widthBytes = Math.ceil(width / 8);
             
-            const xL = chunkWidth & 0xFF;
-            const xH = (chunkWidth >> 8) & 0xFF;
-            const yL = chunkHeight & 0xFF;
-            const yH = (chunkHeight >> 8) & 0xFF;
+            logDebug(`Printing bitmap copy ${copyNum}: ${width}x${height} (${widthBytes} bytes per row)`);
             
-            const commandHeader = new Uint8Array([
-              0x1D, 0x76, 0x30,  // GS v 0 command prefix
-              0,                 // Mode 0 (normal)
-              xL, xH,            // Width in bytes (low, high)
-              yL, yH             // Height in dots (low, high)
-            ]);
+            // 1. Initialize printer
+            logDebug("Sending initialization command...");
+            await sendData(new Uint8Array([0x1B, 0x40]));
             
-            // Extract bitmap data for this chunk
-            const startByte = startRow * widthBytes;
-            const endByte = startByte + (chunkHeight * widthBytes);
-            const chunkData = bitmapData.slice(startByte, endByte);
+            // 2. Text content - just send the text directly
+            logDebug("Sending header text...");
+            const encoder = new TextEncoder();
+            const textContent = encoder.encode(`\n\nConnect with me\non LinkedIn\nCode: ${currentQrCode}\nCreated by\nRealsense\n  Solutions\n\n* this app was vibe coded in 6 hours *\n`);
+            await sendData(textContent);
             
-            // Combine command header with chunk data
-            const chunk = new Uint8Array(commandHeader.length + chunkData.length);
-            chunk.set(commandHeader, 0);
-            chunk.set(chunkData, commandHeader.length);
+            // 3. Process the bitmap in chunks 
+            logDebug("Processing bitmap data...");
             
-            // Send this chunk
-            logDebug(`Sending chunk ${Math.floor(startRow/rowsPerChunk) + 1}: ${chunkData.length} bytes (rows ${startRow+1}-${startRow+chunkHeight})`);
-            await sendData(chunk);
+            // We need to split the data into chunks because of the 512-byte Bluetooth limit
+            // Calculate how many rows we can safely send in each chunk
+            const MAX_CHUNK_SIZE = 350; // Optimized value from diagnostic.html
+            const HEADER_SIZE = 7; // GS v 0 header is 7 bytes
+            const maxBytesPerChunk = MAX_CHUNK_SIZE - HEADER_SIZE;
+            const rowsPerChunk = Math.max(1, Math.floor(maxBytesPerChunk / widthBytes));
             
-            // Add a delay between chunks to let the printer process
-            await new Promise(resolve => setTimeout(resolve, 300));
+            logDebug(`Splitting into chunks with max ${rowsPerChunk} rows per chunk`);
+            
+            // Process the bitmap in chunks
+            for (let startRow = 0; startRow < height; startRow += rowsPerChunk) {
+              // Calculate the number of rows in this chunk
+              const rowsInThisChunk = Math.min(rowsPerChunk, height - startRow);
+              
+              // Build GS v 0 command header for this chunk
+              const chunkWidth = widthBytes;
+              const chunkHeight = rowsInThisChunk;
+              
+              const xL = chunkWidth & 0xFF;
+              const xH = (chunkWidth >> 8) & 0xFF;
+              const yL = chunkHeight & 0xFF;
+              const yH = (chunkHeight >> 8) & 0xFF;
+              
+              const commandHeader = new Uint8Array([
+                0x1D, 0x76, 0x30,  // GS v 0 command prefix
+                0,                 // Mode 0 (normal)
+                xL, xH,            // Width in bytes (low, high)
+                yL, yH             // Height in dots (low, high)
+              ]);
+              
+              // Extract bitmap data for this chunk
+              const startByte = startRow * widthBytes;
+              const endByte = startByte + (chunkHeight * widthBytes);
+              const chunkData = bitmapData.slice(startByte, endByte);
+              
+              // Combine command header with chunk data
+              const chunk = new Uint8Array(commandHeader.length + chunkData.length);
+              chunk.set(commandHeader, 0);
+              chunk.set(chunkData, commandHeader.length);
+              
+              // Send this chunk
+              logDebug(`Sending chunk ${Math.floor(startRow/rowsPerChunk) + 1}: ${chunkData.length} bytes (rows ${startRow+1}-${startRow+chunkHeight})`);
+              await sendData(chunk);
+              
+              // Add a delay between chunks to let the printer process
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            // 4. Send final line feeds and cut command
+            logDebug("Sending line feeds and cut command...");
+            await sendData(new Uint8Array([0x1B, 0x64, 0x04])); // Feed 4 lines
+            await sendData(new Uint8Array([0x1D, 0x56, 0x00])); // GS V 0 - Full cut
+            
+            // Add a short delay between copies
+            if (copyNum < printQuantity) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           }
-          
-          // 4. Send final line feeds and cut command
-          logDebug("Sending line feeds and cut command...");
-          await sendData(new Uint8Array([0x1B, 0x64, 0x04])); // Feed 4 lines
-          await sendData(new Uint8Array([0x1D, 0x56, 0x00])); // GS V 0 - Full cut
         } catch (printError) {
           console.error("Error printing QR code:", printError);
           // We still show the QR code even if printing fails
@@ -513,7 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText("Connect with me", leftPadding, verticalCenter - lineHeight*2);
     
     // Draw LinkedIn icon - LARGER VERSION
-    const iconSize = 22; // Increased from 16 to 22
+    const iconSize = 30; // Increased from 16 to 22
     const iconX = leftPadding;
     const iconY = verticalCenter - lineHeight - 6; // Adjusted for better spacing below "Connect with me"
     
@@ -573,6 +594,11 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Draw "Solutions" on second line, indented
     ctx.fillText("  Solutions", leftPadding, verticalCenter + lineHeight*3 - 15); // Adjusted spacing
+    
+    // Add fine print text at the bottom
+    ctx.font = "italic 12px Inter"; // Small italicized font for fine print
+    ctx.fillStyle = "#000000"; // Lighter color for fine print
+    ctx.fillText("This app was 100% written by AI", leftPadding+75, PRINTER_BITMAP_HEIGHT - 8); // Position near bottom of canvas
   }
   
   // Create bitmap data from canvas

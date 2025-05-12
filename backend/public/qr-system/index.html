@@ -83,6 +83,21 @@
       <div class="divider"></div>
 
       <div class="qr-section">
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="print-quantity">Number of labels to print: <span id="quantity-value">1</span></label>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span>1</span>
+            <input 
+              type="range" 
+              id="print-quantity" 
+              min="1" 
+              max="10" 
+              value="1" 
+              style="flex-grow: 1;"
+            >
+            <span>10</span>
+          </div>
+        </div>
         <button id="generate-print-qr" class="btn primary">Generate & Print QR Code</button>
         
         <div id="qr-preview" class="preview-container hidden">
