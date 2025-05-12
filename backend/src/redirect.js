@@ -34,25 +34,28 @@ exports.handler = async function (req) {
     }).promise();
 
     const item = result.Item;
+    const baseUrl = process.env.BASE_URL || 'https://example.com';
 
     // Determine redirect based on code status
     if (item) {
       // Found the code - check if it's assigned
       if (item.finalUrl) {
-        // Code is assigned - redirect to the finalUrl
+        // Code is assigned - redirect through the intermediate page
+        const redirectPageUrl = `${baseUrl}/redirect-page.html?dest=${encodeURIComponent(item.finalUrl)}`;
+        
         return {
-          status: 301,
+          status: 302, // Using 302 for intermediate redirect
           headers: {
-            'Location': item.finalUrl
+            'Location': redirectPageUrl
           },
           body: {
             redirect: true,
-            url: item.finalUrl
+            url: redirectPageUrl,
+            finalDestination: item.finalUrl
           }
         };
       } else {
         // Code is not assigned - redirect to registration page
-        const baseUrl = process.env.BASE_URL || 'https://example.com';
         const registrationUrl = `${baseUrl}/register.html?code=${code}`;
         
         return {
