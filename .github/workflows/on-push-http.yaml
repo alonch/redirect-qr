@@ -5,9 +5,7 @@ on:
       - main
 jobs:
   deploy:
-    environment:
-      name: main
-      url: https://${{ steps.frontend.outputs.domain }}
+    
     permissions: 
       id-token: write
     runs-on: ubuntu-latest
