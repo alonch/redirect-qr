@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // 2. Text content - just send the text directly
           logDebug("Sending header text...");
           const encoder = new TextEncoder();
-          const textContent = encoder.encode(`\n\nConnect with me\nCode: ${currentQrCode}\nCreated by\nRealsense\n     Solutions\n\n`);
+          const textContent = encoder.encode(`\n\nConnect with me\non LinkedIn\nCode: ${currentQrCode}\nCreated by\nRealsense\n  Solutions\n\n`);
           await sendData(textContent);
           
           // 3. Process the bitmap in chunks 
@@ -506,14 +506,54 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Calculate vertical center based on QR code position
     const verticalCenter = qrYOffset + QR_CODE_SIZE/2;
-    const lineHeight = 28; // Reduced line height for more compact text
+    const lineHeight = 30; // Slightly increased for better spacing with larger icon
     
     // Draw first part of the text - aligned with top half of QR code
     ctx.font = "bold 20px Inter"; // Reduced font size
     ctx.fillText("Connect with me", leftPadding, verticalCenter - lineHeight*2);
     
-    ctx.font = "16px Inter"; // Reduced font size
-    ctx.fillText("on LinkedIn", leftPadding, verticalCenter - lineHeight);
+    // Draw LinkedIn icon - LARGER VERSION
+    const iconSize = 22; // Increased from 16 to 22
+    const iconX = leftPadding;
+    const iconY = verticalCenter - lineHeight - 6; // Adjusted for better spacing below "Connect with me"
+    
+    // Draw LinkedIn icon (simplified version)
+    ctx.save();
+    
+    // Draw icon background (rounded square)
+    ctx.fillStyle = "#000000";
+    ctx.beginPath();
+    const radius = 4; // Corner radius (increased slightly)
+    ctx.moveTo(iconX + radius, iconY);
+    ctx.lineTo(iconX + iconSize - radius, iconY);
+    ctx.quadraticCurveTo(iconX + iconSize, iconY, iconX + iconSize, iconY + radius);
+    ctx.lineTo(iconX + iconSize, iconY + iconSize - radius);
+    ctx.quadraticCurveTo(iconX + iconSize, iconY + iconSize, iconX + iconSize - radius, iconY + iconSize);
+    ctx.lineTo(iconX + radius, iconY + iconSize);
+    ctx.quadraticCurveTo(iconX, iconY + iconSize, iconX, iconY + iconSize - radius);
+    ctx.lineTo(iconX, iconY + radius);
+    ctx.quadraticCurveTo(iconX, iconY, iconX + radius, iconY);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Draw the letter "in" in white
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 14px Arial"; // Increased from 11 to 14
+    ctx.fillText("in", iconX + 6, iconY + iconSize - 6); // Adjusted positioning
+    
+    ctx.restore();
+    
+    // Add "on" text
+    ctx.fillStyle = "#000000";
+    ctx.font = "16px Inter";
+    const textY = iconY + iconSize/2 + 5; // Save vertical position for consistent alignment
+    ctx.fillText("on", iconX + iconSize + 8, textY);
+    
+    // Add LinkedIn text after "on" with space
+    ctx.font = "bold 16px Inter"; // Make LinkedIn bold
+    const onText = "on ";
+    const onTextWidth = ctx.measureText(onText).width;
+    ctx.fillText("LinkedIn", iconX + iconSize + 8 + onTextWidth, textY);
     
     // Add the decorative line
     ctx.strokeStyle = "#000000"; 
@@ -525,14 +565,14 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Draw second part with "Created by" text - aligned with bottom half of QR code
     ctx.font = "bold 20px Inter"; // Reduced font size
-    ctx.fillText("Created by", leftPadding, verticalCenter + lineHeight);
+    ctx.fillText("Created by", leftPadding, verticalCenter + lineHeight - 5); // Adjusted spacing
     
     // Draw "Realsense" on first line
     ctx.font = "bold 22px Inter"; // Reduced font size
-    ctx.fillText("Realsense", leftPadding, verticalCenter + lineHeight*2);
+    ctx.fillText("Realsense", leftPadding, verticalCenter + lineHeight*2 - 10); // Adjusted spacing
     
     // Draw "Solutions" on second line, indented
-    ctx.fillText("  Solutions", leftPadding, verticalCenter + lineHeight*3 - 5); // Reduced indentation, slightly adjusted position
+    ctx.fillText("  Solutions", leftPadding, verticalCenter + lineHeight*3 - 15); // Adjusted spacing
   }
   
   // Create bitmap data from canvas
