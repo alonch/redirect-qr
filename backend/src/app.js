@@ -14,6 +14,11 @@ app.use(
 // Serve static files from the frontend directory
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Add a redirect from root to qr-system/index.html
+app.get('/', (req, res) => {
+  res.redirect('/qr-system/index.html');
+});
+
 app.post('/plus', async (httpReq, httpResp) => {
   const resp = await require('./plus').handler(httpReq);
   httpResp
