@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // 2. Text content - just send the text directly
           logDebug("Sending header text...");
           const encoder = new TextEncoder();
-          const textContent = encoder.encode(`\n\nConference Registration\nCode: ${currentQrCode}\n\n`);
+          const textContent = encoder.encode(`\n\nConnect with me\nCode: ${currentQrCode}\nCreated by\nRealsense\n     Solutions\n\n`);
           await sendData(textContent);
           
           // 3. Process the bitmap in chunks 
@@ -387,12 +387,15 @@ document.addEventListener("DOMContentLoaded", () => {
         // Get the canvas from QR code
         const canvasQr = tempDiv.querySelector('canvas');
         if (canvasQr) {
-          // Center the QR code on our main canvas
-          const xOffset = (PRINTER_BITMAP_WIDTH - QR_CODE_SIZE) / 2;
+          // Position the QR code on the right side of the canvas with better alignment
+          const rightOffset = PRINTER_BITMAP_WIDTH - QR_CODE_SIZE - 40; // Increased padding for more space
           const yOffset = (PRINTER_BITMAP_HEIGHT - QR_CODE_SIZE) / 2;
-          ctx.drawImage(canvasQr, xOffset, yOffset);
+          ctx.drawImage(canvasQr, rightOffset, yOffset);
           
-          // Create bitmap data from the canvas with centered QR code
+          // Add text on the left side
+          addTextToCanvas(ctx, yOffset);
+          
+          // Create bitmap data from the canvas with QR code and text
           if (createBitmapData(qrCanvas)) {
             logDebug("QR code bitmap created successfully");
             
@@ -430,10 +433,13 @@ document.addEventListener("DOMContentLoaded", () => {
             light: "#FFFFFF",
           },
         }).then(() => {
-          // Now draw this QR code centered on our main canvas
-          const xOffset = (PRINTER_BITMAP_WIDTH - QR_CODE_SIZE) / 2;
+          // Position the QR code on the right side of the canvas with better alignment
+          const rightOffset = PRINTER_BITMAP_WIDTH - QR_CODE_SIZE - 60; // Increased padding for more space
           const yOffset = (PRINTER_BITMAP_HEIGHT - QR_CODE_SIZE) / 2;
-          ctx.drawImage(qrOnlyCanvas, xOffset, yOffset);
+          ctx.drawImage(qrOnlyCanvas, rightOffset, yOffset);
+          
+          // Add text on the left side
+          addTextToCanvas(ctx, yOffset);
           
           // Create bitmap data
           if (createBitmapData(qrCanvas)) {
@@ -488,6 +494,45 @@ document.addEventListener("DOMContentLoaded", () => {
       // Return true to prevent error throwing, user will see the error in the UI
       return true;
     }
+  }
+  
+  // Function to add text to the canvas
+  function addTextToCanvas(ctx, qrYOffset) {
+    const leftPadding = 30; // Reduced left padding to increase space between text and QR
+    
+    // Set text styling - only black for thermal printer compatibility
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "left";
+    
+    // Calculate vertical center based on QR code position
+    const verticalCenter = qrYOffset + QR_CODE_SIZE/2;
+    const lineHeight = 28; // Reduced line height for more compact text
+    
+    // Draw first part of the text - aligned with top half of QR code
+    ctx.font = "bold 20px Inter"; // Reduced font size
+    ctx.fillText("Connect with me", leftPadding, verticalCenter - lineHeight*2);
+    
+    ctx.font = "16px Inter"; // Reduced font size
+    ctx.fillText("on LinkedIn", leftPadding, verticalCenter - lineHeight);
+    
+    // Add the decorative line
+    ctx.strokeStyle = "#000000"; 
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(leftPadding, verticalCenter);
+    ctx.lineTo(leftPadding + 150, verticalCenter); // Shortened line
+    ctx.stroke();
+    
+    // Draw second part with "Created by" text - aligned with bottom half of QR code
+    ctx.font = "bold 20px Inter"; // Reduced font size
+    ctx.fillText("Created by", leftPadding, verticalCenter + lineHeight);
+    
+    // Draw "Realsense" on first line
+    ctx.font = "bold 22px Inter"; // Reduced font size
+    ctx.fillText("Realsense", leftPadding, verticalCenter + lineHeight*2);
+    
+    // Draw "Solutions" on second line, indented
+    ctx.fillText("  Solutions", leftPadding, verticalCenter + lineHeight*3 - 5); // Reduced indentation, slightly adjusted position
   }
   
   // Create bitmap data from canvas

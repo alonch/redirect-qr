@@ -37,6 +37,7 @@ jobs:
           name: backend
           artifacts: backend
           entrypoint-file: src/app.js
+          timeout: 30
           entrypoint-function: handler
           permissions: |
             dynamodb: write
