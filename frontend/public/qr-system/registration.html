@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conference Registration</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Conference Registration</h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card registration-card">
+      <div id="loading-screen">
+        <div class="spinner"></div>
+        <p>Checking registration status...</p>
+      </div>
+
+      <div id="registration-form" class="hidden">
+        <h2>Welcome to the Conference!</h2>
+        <p>Please complete your registration by filling out the form below.</p>
+        
+        <form id="attendee-form">
+          <input type="hidden" id="code-input" name="code">
+          
+          <div class="form-group">
+            <label for="name-input">Your Name (optional)</label>
+            <input type="text" id="name-input" name="name" placeholder="Enter your name">
+          </div>
+          
+          <div class="form-group">
+            <label for="profile-input">Profile URL <span class="required">*</span></label>
+            <input type="url" id="profile-input" name="profileUrl" placeholder="https://linkedin.com/in/yourprofile" required>
+            <small>Link to your LinkedIn, GitHub, or personal website</small>
+          </div>
+          
+          <button type="submit" class="btn primary">Complete Registration</button>
+        </form>
+      </div>
+
+      <div id="success-screen" class="hidden">
+        <div class="success-icon">✓</div>
+        <h2>Registration Complete!</h2>
+        <p>Thank you for registering for the conference.</p>
+        <p>Your information has been successfully recorded.</p>
+      </div>
+
+      <div id="redirect-screen" class="hidden">
+        <p>You've already registered. Redirecting you to the conference portal...</p>
+        <div class="spinner"></div>
+      </div>
+
+      <div id="error-screen" class="hidden">
+        <div class="error-icon">!</div>
+        <h2>Something went wrong</h2>
+        <p id="error-message">Unable to process your registration. Please try again.</p>
+        <button id="retry-button" class="btn secondary">Try Again</button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Conference Registration System v0.1</p>
+    </div>
+  </footer>
+
+  <script src="registration.js"></script>
+</body>
+</html>
