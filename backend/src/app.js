@@ -12,7 +12,7 @@ app.use(
 );
 
 // Serve static files from the frontend directory
-app.use(express.static(path.join(__dirname, '../../frontend/public')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 app.post('/plus', async (httpReq, httpResp) => {
   const resp = await require('./plus').handler(httpReq);

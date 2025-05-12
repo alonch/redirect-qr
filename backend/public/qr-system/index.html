@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conference QR Code Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Use only the local QR Code library -->
+  <script src="qrcode.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Conference QR Code Generator</h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2>Admin Printer Control</h2>
+      
+      <div class="printer-section">
+        <div class="printer-status">
+          <div id="printer-indicator" class="indicator disconnected"></div>
+          <p id="printer-status-text">Printer disconnected</p>
+        </div>
+        <button id="connect-printer" class="btn primary">Connect Printer</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="qr-section">
+        <button id="generate-qr" class="btn primary" disabled>Generate QR Code</button>
+        
+        <div id="qr-preview" class="preview-container hidden">
+          <h3>QR Code Preview</h3>
+          <div class="qr-display">
+            <canvas id="qr-code-display"></canvas>
+          </div>
+          <div class="qr-info">
+            <p>Code: <span id="qr-code-value">-</span></p>
+            <p>URL: <span id="qr-url-value">-</span></p>
+          </div>
+          <button id="print-qr" class="btn secondary" disabled>Print QR Code</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card info-card">
+      <h3>How it works</h3>
+      <ol>
+        <li>Connect to a Bluetooth thermal printer</li>
+        <li>Generate a unique QR code from the server</li>
+        <li>Print the QR code and give it to an attendee</li>
+        <li>When first scanned, the attendee will be directed to a registration form</li>
+        <li>After the attendee registers their URL, future scans will redirect directly to their URL</li>
+      </ol>
+      <p class="note">Each QR code can only be registered once. If an attendee needs a new code, generate a new one here.</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Conference Registration System v1.0</p>
+    </div>
+  </footer>
+
+  <script src="index.js"></script>
+</body>
+</html>

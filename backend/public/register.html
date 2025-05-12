@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Registration</title>
+  <link rel="stylesheet" href="/qr-system/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Conference QR Code Registration</h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2>Register Your QR Code</h2>
+      
+      <div id="registration-form">
+        <form id="register-form">
+          <input type="hidden" id="code" name="code">
+          
+          <div class="form-group">
+            <label for="finalUrl">Your URL to Share</label>
+            <input type="url" id="finalUrl" name="finalUrl" placeholder="https://example.com/your-profile" required>
+            <small>Link to your LinkedIn, GitHub, or personal website</small>
+          </div>
+          
+          <button type="submit" class="btn primary">Register QR Code</button>
+        </form>
+      </div>
+      
+      <div id="success-message" class="success-container hidden">
+        <div class="success-icon">✓</div>
+        <h3>Registration Successful!</h3>
+        <p>Your QR code is now linked to your URL.</p>
+        <p>When someone scans your QR code, they will be redirected to your URL.</p>
+      </div>
+      
+      <div id="error-message" class="error-container hidden"></div>
+    </div>
+
+    <div class="card info-card">
+      <h3>How it works</h3>
+      <ol>
+        <li>Enter the URL you want to share with others</li>
+        <li>Click "Register QR Code" to link your URL to this QR code</li>
+        <li>Now when anyone scans your QR code, they'll be redirected to your URL</li>
+      </ol>
+      <p class="note">Each QR code can only be registered once. If you need to change your URL, please contact the event organizer for a new QR code.</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Conference Registration System v1.0</p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get code from URL query parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (!code) {
+        showError('No QR code specified. Please scan a valid QR code.');
+        return;
+      }
+      
+      // Set the code in the hidden input
+      document.getElementById('code').value = code;
+      
+      // Handle form submission
+      document.getElementById('register-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const finalUrl = document.getElementById('finalUrl').value;
+        
+        try {
+          const response = await fetch('/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              code: code,
+              finalUrl: finalUrl
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            document.getElementById('registration-form').classList.add('hidden');
+            document.getElementById('success-message').classList.remove('hidden');
+          } else {
+            showError(result.error || 'Registration failed');
+          }
+        } catch (error) {
+          showError('An error occurred while registering: ' + error.message);
+        }
+      });
+    });
+    
+    function showError(message) {
+      const errorElement = document.getElementById('error-message');
+      errorElement.innerHTML = `
+        <div class="error-icon">!</div>
+        <h3>Registration Error</h3>
+        <p>${message}</p>
+      `;
+      errorElement.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html> 
