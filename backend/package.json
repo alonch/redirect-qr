@@ -4,14 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/app.js"
+    "start": "node src/app.js",
+    "dev": "node src/app.js",
+    "start:aws": "AWS_SDK_LOAD_CONFIG=1 AWS_PROFILE=realsense-development AWS_REGION=us-east-1 BASE_URL=http://localhost:3001 node src/app.js",
+    "login:aws": "aws sso login --profile realsense-development"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.1505.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.0.1"
   }
 }

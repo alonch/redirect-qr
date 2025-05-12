@@ -17,6 +17,38 @@ app.post('/plus', async (httpReq, httpResp) => {
     .json(resp.body);
 });
 
+app.post('/generate', async (httpReq, httpResp) => {
+  const resp = await require('./generate').handler(httpReq);
+  httpResp
+    .status(resp.status)
+    .json(resp.body);
+});
+
+app.post('/register', async (httpReq, httpResp) => {
+  const resp = await require('./register').handler(httpReq);
+  httpResp
+    .status(resp.status)
+    .json(resp.body);
+});
+
+app.get('/qr/:code', async (httpReq, httpResp) => {
+  const resp = await require('./redirect').handler(httpReq);
+  
+  // Set any headers from the response
+  if (resp.headers) {
+    Object.keys(resp.headers).forEach(header => {
+      httpResp.set(header, resp.headers[header]);
+    });
+  }
+  
+  // For redirects (status 301 or 302), don't return JSON
+  if (resp.status === 301 || resp.status === 302) {
+    httpResp.status(resp.status).end();
+  } else {
+    httpResp.status(resp.status).json(resp.body);
+  }
+});
+
 const startServer = async () => {
   app.listen(3001, () => {
     console.log("listening on port 3001!");
