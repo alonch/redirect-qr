@@ -9,7 +9,7 @@ jobs:
     permissions: 
       id-token: write
       contents: read
-      
+
     runs-on: ubuntu-latest
     steps:
       - name: Check out repo
@@ -38,5 +38,9 @@ jobs:
           artifacts: backend
           entrypoint-file: src/app.js
           entrypoint-function: handler
+          permissions: |
+            dynamodb: write
+          env: |
+            BASE_URL: https://w3coxpl3igdtron6x6k5wj6smu0zntlb.lambda-url.us-east-1.on.aws
           allow-public-access: true
           memory: 1536
