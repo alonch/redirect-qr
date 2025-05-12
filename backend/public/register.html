@@ -8,11 +8,60 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    .header-logo {
+      max-height: 50px;
+      margin-bottom: 15px;
+      display: block;
+    }
+    
+    @media (min-width: 768px) {
+      .header-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      
+      .header-logo {
+        margin-bottom: 0;
+      }
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 10px;
+    }
+
+    .social-link {
+      display: flex;
+      align-items: center;
+      color: #666;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .social-link:hover {
+      color: #0066cc;
+    }
+
+    .social-icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+    }
+  </style>
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>Conference QR Code Registration</h1>
+      <div class="header-content">
+        <a href="https://realsensesolutions.com" target="_blank">
+          <img src="https://realsensesolutions.com/images/logo-long-side.png" alt="Realsense Solutions Logo" class="header-logo">
+        </a>
+        <h1>QR Code Registration</h1>
+      </div>
     </div>
   </header>
 
@@ -51,13 +100,31 @@
         <li>Click "Register QR Code" to link your URL to this QR code</li>
         <li>Now when anyone scans your QR code, they'll be redirected to your URL</li>
       </ol>
-      <p class="note">Each QR code can only be registered once. If you need to change your URL, please contact the event organizer for a new QR code.</p>
+      <p class="note">Each QR code can only be registered once. If you need to change your URL, please contact us <a href="mailto:info@realsensesolutions.com" class="primary" style="color: #01d101">info@realsensesolutions.com</a>.</p>
     </div>
   </main>
 
   <footer>
     <div class="container">
       <p>Conference Registration System v1.0</p>
+      <div class="social-links">
+        <a href="https://realsensesolutions.com" target="_blank" class="social-link">
+          <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          Website
+        </a>
+        <a href="https://www.linkedin.com/company/realsense-solutions" target="_blank" class="social-link">
+          <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+            <rect x="2" y="9" width="4" height="12"></rect>
+            <circle cx="4" cy="4" r="2"></circle>
+          </svg>
+          LinkedIn
+        </a>
+      </div>
     </div>
   </footer>
 

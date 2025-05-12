@@ -1,8 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements
   const connectPrinterBtn = document.getElementById("connect-printer")
-  const generateQrBtn = document.getElementById("generate-qr")
-  const printQrBtn = document.getElementById("print-qr")
+  const generatePrintQrBtn = document.getElementById("generate-print-qr")
   const printerStatusText = document.getElementById("printer-status-text")
   const printerIndicator = document.getElementById("printer-indicator")
   const qrPreview = document.getElementById("qr-preview")
@@ -114,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Enable Generate QR button by default for testing
-  generateQrBtn.disabled = false
+  generatePrintQrBtn.disabled = false
 
   // Debug logging function
   function logDebug(message, data) {
@@ -168,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
       printerIndicator.classList.remove("disconnected");
       printerIndicator.classList.add("connected");
       connectPrinterBtn.textContent = "Disconnect Printer";
-      printQrBtn.disabled = false;
+      generatePrintQrBtn.disabled = false;
 
       // Listen for disconnection
       bluetoothDevice.addEventListener("gattserverdisconnected", onDisconnected);
@@ -184,18 +183,19 @@ document.addEventListener("DOMContentLoaded", () => {
     printerIndicator.classList.remove("connected");
     printerIndicator.classList.add("disconnected");
     connectPrinterBtn.textContent = "Connect Printer";
-    printQrBtn.disabled = true;
+    generatePrintQrBtn.disabled = true;
     bluetoothDevice = null;
     bluetoothCharacteristic = null;
   }
 
-  // Generate QR Code
-  generateQrBtn.addEventListener("click", async () => {
+  // Combined Generate and Print QR Code
+  generatePrintQrBtn.addEventListener("click", async () => {
     try {
       // Show loading state
-      generateQrBtn.disabled = true;
-      generateQrBtn.textContent = "Generating...";
+      generatePrintQrBtn.disabled = true;
+      generatePrintQrBtn.textContent = "Processing...";
 
+      // Step 1: Generate the QR code
       // Use the backend API to generate a QR code
       const response = await fetch('/generate', {
         method: 'POST',
@@ -226,19 +226,119 @@ document.addEventListener("DOMContentLoaded", () => {
       // Show the preview section
       qrPreview.classList.remove("hidden");
 
-      // Enable print button if printer is connected
+      // Step 2: Print the QR code if printer is connected
       if (bluetoothCharacteristic) {
-        printQrBtn.disabled = false;
+        try {
+          generatePrintQrBtn.textContent = "Printing...";
+          
+          // If bitmap data is not available, try to create it from the current QR code
+          if (!bitmapData) {
+            const canvas = document.querySelector("#qr-code-display");
+            if (canvas) {
+              createBitmapData(canvas);
+            } else {
+              // Try to find canvas in a QR code container
+              const canvasInQr = document.querySelector("#temp-qr-container canvas");
+              if (canvasInQr) {
+                createBitmapData(canvasInQr);
+              } else {
+                createFallbackBitmap();
+              }
+            }
+          }
+          
+          if (!bitmapData) {
+            throw new Error("Could not create bitmap data for printing");
+          }
+          
+          // Get bitmap dimensions
+          const width = PRINTER_BITMAP_WIDTH;
+          const height = PRINTER_BITMAP_HEIGHT;
+          const widthBytes = Math.ceil(width / 8);
+          
+          logDebug(`Printing bitmap: ${width}x${height} (${widthBytes} bytes per row)`);
+          
+          // 1. Initialize printer
+          logDebug("Sending initialization command...");
+          await sendData(new Uint8Array([0x1B, 0x40]));
+          
+          // 2. Text content - just send the text directly
+          logDebug("Sending header text...");
+          const encoder = new TextEncoder();
+          const textContent = encoder.encode(`\n\nConference Registration\nCode: ${currentQrCode}\n\n`);
+          await sendData(textContent);
+          
+          // 3. Process the bitmap in chunks 
+          logDebug("Processing bitmap data...");
+          
+          // We need to split the data into chunks because of the 512-byte Bluetooth limit
+          // Calculate how many rows we can safely send in each chunk
+          const MAX_CHUNK_SIZE = 350; // Optimized value from diagnostic.html
+          const HEADER_SIZE = 7; // GS v 0 header is 7 bytes
+          const maxBytesPerChunk = MAX_CHUNK_SIZE - HEADER_SIZE;
+          const rowsPerChunk = Math.max(1, Math.floor(maxBytesPerChunk / widthBytes));
+          
+          logDebug(`Splitting into chunks with max ${rowsPerChunk} rows per chunk`);
+          
+          // Process the bitmap in chunks
+          for (let startRow = 0; startRow < height; startRow += rowsPerChunk) {
+            // Calculate the number of rows in this chunk
+            const rowsInThisChunk = Math.min(rowsPerChunk, height - startRow);
+            
+            // Build GS v 0 command header for this chunk
+            const chunkWidth = widthBytes;
+            const chunkHeight = rowsInThisChunk;
+            
+            const xL = chunkWidth & 0xFF;
+            const xH = (chunkWidth >> 8) & 0xFF;
+            const yL = chunkHeight & 0xFF;
+            const yH = (chunkHeight >> 8) & 0xFF;
+            
+            const commandHeader = new Uint8Array([
+              0x1D, 0x76, 0x30,  // GS v 0 command prefix
+              0,                 // Mode 0 (normal)
+              xL, xH,            // Width in bytes (low, high)
+              yL, yH             // Height in dots (low, high)
+            ]);
+            
+            // Extract bitmap data for this chunk
+            const startByte = startRow * widthBytes;
+            const endByte = startByte + (chunkHeight * widthBytes);
+            const chunkData = bitmapData.slice(startByte, endByte);
+            
+            // Combine command header with chunk data
+            const chunk = new Uint8Array(commandHeader.length + chunkData.length);
+            chunk.set(commandHeader, 0);
+            chunk.set(chunkData, commandHeader.length);
+            
+            // Send this chunk
+            logDebug(`Sending chunk ${Math.floor(startRow/rowsPerChunk) + 1}: ${chunkData.length} bytes (rows ${startRow+1}-${startRow+chunkHeight})`);
+            await sendData(chunk);
+            
+            // Add a delay between chunks to let the printer process
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+          
+          // 4. Send final line feeds and cut command
+          logDebug("Sending line feeds and cut command...");
+          await sendData(new Uint8Array([0x1B, 0x64, 0x04])); // Feed 4 lines
+          await sendData(new Uint8Array([0x1D, 0x56, 0x00])); // GS V 0 - Full cut
+        } catch (printError) {
+          console.error("Error printing QR code:", printError);
+          // We still show the QR code even if printing fails
+        }
+      } else {
+        logDebug("Printer not connected, generated QR code only");
       }
 
       // Reset button state
-      generateQrBtn.disabled = false;
-      generateQrBtn.textContent = "Generate QR Code";
+      generatePrintQrBtn.disabled = false;
+      generatePrintQrBtn.textContent = "Generate & Print QR Code";
     } catch (error) {
-      console.error("Error generating QR code:", error);
+      console.error("Error generating/printing QR code:", error);
       
-      generateQrBtn.disabled = false;
-      generateQrBtn.textContent = "Generate QR Code";
+      generatePrintQrBtn.disabled = false;
+      generatePrintQrBtn.textContent = "Generate & Print QR Code";
     }
   });
 
@@ -465,123 +565,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     logDebug("Created fallback bitmap pattern", bitmapData.byteLength);
   }
-
-  // Print QR Code
-  printQrBtn.addEventListener("click", async () => {
-    if (!bluetoothCharacteristic || !currentQrCode) {
-      return;
-    }
-
-    try {
-      printQrBtn.disabled = true;
-      printQrBtn.textContent = "Printing...";
-      
-      // If bitmap data is not available, try to create it from the current QR code
-      if (!bitmapData) {
-        const canvas = document.querySelector("#qr-code-display");
-        if (canvas) {
-          createBitmapData(canvas);
-        } else {
-          // Try to find canvas in a QR code container
-          const canvasInQr = document.querySelector("#temp-qr-container canvas");
-          if (canvasInQr) {
-            createBitmapData(canvasInQr);
-          } else {
-            createFallbackBitmap();
-          }
-        }
-      }
-      
-      if (!bitmapData) {
-        throw new Error("Could not create bitmap data for printing");
-      }
-      
-      // Get bitmap dimensions
-      const width = PRINTER_BITMAP_WIDTH;
-      const height = PRINTER_BITMAP_HEIGHT;
-      const widthBytes = Math.ceil(width / 8);
-      
-      logDebug(`Printing bitmap: ${width}x${height} (${widthBytes} bytes per row)`);
-      
-      // 1. Initialize printer
-      logDebug("Sending initialization command...");
-      await sendData(new Uint8Array([0x1B, 0x40]));
-      
-      // 2. Text content - just send the text directly
-      logDebug("Sending header text...");
-      const encoder = new TextEncoder();
-      const textContent = encoder.encode(`\n\nConference Registration\nCode: ${currentQrCode}\n\n`);
-      await sendData(textContent);
-      
-      // 3. Process the bitmap in chunks 
-      logDebug("Processing bitmap data...");
-      
-      // We need to split the data into chunks because of the 512-byte Bluetooth limit
-      // Calculate how many rows we can safely send in each chunk
-      const MAX_CHUNK_SIZE = 350; // Optimized value from diagnostic.html
-      const HEADER_SIZE = 7; // GS v 0 header is 7 bytes
-      const maxBytesPerChunk = MAX_CHUNK_SIZE - HEADER_SIZE;
-      const rowsPerChunk = Math.max(1, Math.floor(maxBytesPerChunk / widthBytes));
-      
-      logDebug(`Splitting into chunks with max ${rowsPerChunk} rows per chunk`);
-      
-      // Process the bitmap in chunks
-      for (let startRow = 0; startRow < height; startRow += rowsPerChunk) {
-        // Calculate the number of rows in this chunk
-        const rowsInThisChunk = Math.min(rowsPerChunk, height - startRow);
-        
-        // Build GS v 0 command header for this chunk
-        const chunkWidth = widthBytes;
-        const chunkHeight = rowsInThisChunk;
-        
-        const xL = chunkWidth & 0xFF;
-        const xH = (chunkWidth >> 8) & 0xFF;
-        const yL = chunkHeight & 0xFF;
-        const yH = (chunkHeight >> 8) & 0xFF;
-        
-        const commandHeader = new Uint8Array([
-          0x1D, 0x76, 0x30,  // GS v 0 command prefix
-          0,                 // Mode 0 (normal)
-          xL, xH,            // Width in bytes (low, high)
-          yL, yH             // Height in dots (low, high)
-        ]);
-        
-        // Extract bitmap data for this chunk
-        const startByte = startRow * widthBytes;
-        const endByte = startByte + (chunkHeight * widthBytes);
-        const chunkData = bitmapData.slice(startByte, endByte);
-        
-        // Combine command header with chunk data
-        const chunk = new Uint8Array(commandHeader.length + chunkData.length);
-        chunk.set(commandHeader, 0);
-        chunk.set(chunkData, commandHeader.length);
-        
-        // Send this chunk
-        logDebug(`Sending chunk ${Math.floor(startRow/rowsPerChunk) + 1}: ${chunkData.length} bytes (rows ${startRow+1}-${startRow+chunkHeight})`);
-        await sendData(chunk);
-        
-        // Add a delay between chunks to let the printer process
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-      
-      // 4. Send final line feeds and cut command
-      logDebug("Sending line feeds and cut command...");
-      await sendData(new Uint8Array([0x1B, 0x64, 0x04])); // Feed 4 lines
-      await sendData(new Uint8Array([0x1D, 0x56, 0x00])); // GS V 0 - Full cut
-      
-      // Update UI
-      printQrBtn.textContent = "Print QR Code";
-      printQrBtn.disabled = false;
-      
-      // Show success message
-      
-    } catch (error) {
-      console.error("Error printing QR code:", error);
-      
-      printQrBtn.textContent = "Print QR Code";
-      printQrBtn.disabled = false;
-    }
-  });
 });
 
 // The QRCode library will be loaded via the script tag in the HTML
