@@ -19,13 +19,6 @@ app.get('/', (req, res) => {
   res.redirect('/qr-system/index.html');
 });
 
-app.post('/plus', async (httpReq, httpResp) => {
-  const resp = await require('./plus').handler(httpReq);
-  httpResp
-    .status(resp.status)
-    .json(resp.body);
-});
-
 app.post('/generate', async (httpReq, httpResp) => {
   const resp = await require('./generate').handler(httpReq);
   httpResp

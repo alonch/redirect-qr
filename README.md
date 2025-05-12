@@ -1,30 +1,53 @@
-# Demo for VanJS meetup
+# QR Code Registration System
 
-This repo is a monorepo for backend and frontend
+A serverless web application for conference badge QR codes with dynamic registration and redirection.
 
-## Backend
+## Overview
 
-Express app with a serverless wrapper to run on AWS Lambda
+This application allows conference organizers to:
+1. Generate and print unique QR codes for attendee badges
+2. When first scanned, direct attendees to a registration form
+3. After registration, automatically redirect future scans to the registered URL
 
-## Frontend 
+## Architecture
 
-Simple React app that requires `REACT_APP_API_URL` environment variable to call the backend API
+This serverless application is built on AWS with the following components:
 
-# Features
+- **Backend**: Express.js app with serverless-http wrapper for AWS Lambda
+- **Database**: DynamoDB for storing QR code registrations
+- **Static UI**: HTML/JS/CSS files served by the Express backend
+- **Printing**: Web Bluetooth API integration with thermal printers
 
-- Sandbox environment from main
-- Ephemeral environments on PRs, it will provision isolated infra for each PR branch
-- On tags `v*.*.*` will deploy to all customers, for exmaple https://safeway.realsense.ca
+## Features
 
-# What's under the hood
+- One-time QR code registration flow
+- Bluetooth thermal printer integration (no drivers needed)
+- Automatic redirection after registration
+- Completely serverless architecture (Lambda, S3, DynamoDB)
+- Low operational cost for conferences and events
 
-- AWS Lambda for the API, infra is provision with terraform using `alonch/actions-aws-function-node@main` action
+## Development
 
-- S3 + CloudFront + Route53 to provision a static website, infra is provision with terraform using `alonch/actions-aws-website@main`
+### Backend & UI
 
-Good to know that this solutions is 100% serverless and it's basically free for low traffic projects. 
+The application is a Node.js Express app with serverless wrapper for AWS Lambda.
 
+First, configure AWS CLI credentials:
 
+```bash
+cd backend
+npm install
+npm start:aws
+```
 
+The UI is provided as static files served by the Express backend:
+- Admin interface: Generate and print QR codes
+- Registration page: For attendees to register their QR codes
 
-chrome://bluetooth-internals/#devices/1d:f7:a1:d6:11:0f
+## What's Under the Hood
+
+- AWS Lambda for the API (provisioned with Terraform)
+- DynamoDB for QR code storage and redirection mapping
+- Web Bluetooth API for thermal printer integration
+
+This solution is 100% serverless and extremely cost-effective for low-traffic events.
